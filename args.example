@@ -1,0 +1,5 @@
+-listen :8080
+-api-token sk-local
+-default-voice en-US-EmmaMultilingualNeural
+-upstream-concurrency 10
+-upstream-interval-ms 500

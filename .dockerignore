@@ -1,0 +1,7 @@
+.git
+.github
+Example
+dist
+*.tar.gz
+*.zip
+*.sha256
