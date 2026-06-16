@@ -569,7 +569,6 @@ func wssHeaders() http.Header {
 	headers.Set("Pragma", "no-cache")
 	headers.Set("Cache-Control", "no-cache")
 	headers.Set("Origin", "chrome-extension://jdiccldimpdaibmpdkjnbmckianbfold")
-	headers.Set("Sec-WebSocket-Version", "13")
 	headers.Set("Cookie", "muid="+muid()+";")
 	return headers
 }
