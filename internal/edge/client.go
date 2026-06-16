@@ -323,6 +323,9 @@ func parseHeadersAndData(data []byte, headerLength int) (map[string]string, []by
 	}
 	headers := map[string]string{}
 	for _, line := range bytes.Split(data[:headerLength], []byte("\r\n")) {
+		if len(line) == 0 {
+			continue
+		}
 		parts := bytes.SplitN(line, []byte(":"), 2)
 		if len(parts) != 2 {
 			return nil, nil, fmt.Errorf("invalid header line %q", string(line))
