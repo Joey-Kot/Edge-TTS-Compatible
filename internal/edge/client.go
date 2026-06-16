@@ -321,22 +321,33 @@ func parseHeadersAndData(data []byte, headerLength int) (map[string]string, []by
 	if headerLength < 0 {
 		return nil, nil, errors.New("message is missing header separator")
 	}
-	headers := map[string]string{}
-	for _, line := range bytes.Split(data[:headerLength], []byte("\r\n")) {
-		if len(line) == 0 {
-			continue
-		}
-		parts := bytes.SplitN(line, []byte(":"), 2)
-		if len(parts) != 2 {
-			return nil, nil, fmt.Errorf("invalid header line %q", string(line))
-		}
-		headers[string(parts[0])] = string(parts[1])
+	if headerLength > len(data) {
+		return nil, nil, errors.New("header length exceeds message length")
+	}
+	headers, err := parseHeaderBlock(data[:headerLength])
+	if err != nil {
+		return nil, nil, err
 	}
 	start := headerLength + len("\r\n\r\n")
 	if start > len(data) {
 		return nil, nil, errors.New("header length exceeds message length")
 	}
 	return headers, data[start:], nil
+}
+
+func parseHeaderBlock(data []byte) (map[string]string, error) {
+	headers := map[string]string{}
+	for _, line := range bytes.Split(data, []byte("\r\n")) {
+		if len(line) == 0 {
+			continue
+		}
+		parts := bytes.SplitN(line, []byte(":"), 2)
+		if len(parts) != 2 {
+			return nil, fmt.Errorf("invalid header line %q", string(line))
+		}
+		headers[string(parts[0])] = string(parts[1])
+	}
+	return headers, nil
 }
 
 func audioFromBinaryMessage(data []byte) ([]byte, error) {
@@ -348,8 +359,8 @@ func audioFromBinaryMessage(data []byte) ([]byte, error) {
 		return nil, errors.New("binary header length exceeds message length")
 	}
 	headerData := data[2 : 2+headerLength]
-	payload := data[2+headerLength:]
-	headers, _, err := parseHeadersAndData(append(headerData, []byte("\r\n\r\n")...), headerLength)
+	payload := trimBinaryPayloadPrefix(data[2+headerLength:])
+	headers, err := parseHeaderBlock(headerData)
 	if err != nil {
 		return nil, err
 	}
@@ -370,6 +381,13 @@ func audioFromBinaryMessage(data []byte) ([]byte, error) {
 		return nil, errors.New("audio message has empty payload")
 	}
 	return payload, nil
+}
+
+func trimBinaryPayloadPrefix(payload []byte) []byte {
+	for bytes.HasPrefix(payload, []byte("\r\n")) {
+		payload = payload[len("\r\n"):]
+	}
+	return payload
 }
 
 type metadataEnvelope struct {

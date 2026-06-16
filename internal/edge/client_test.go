@@ -11,7 +11,7 @@ import (
 
 func TestAudioFromBinaryMessageAllowsTrailingHeaderNewline(t *testing.T) {
 	header := []byte("Path:audio\r\nContent-Type:audio/mpeg\r\n")
-	payload := []byte{0x01, 0x02, 0x03}
+	payload := []byte{0xff, 0xf3, 0x64, 0xc4, 0x01, 0x02, 0x03}
 	message := make([]byte, 2+len(header)+len(payload))
 	binary.BigEndian.PutUint16(message[:2], uint16(len(header)))
 	copy(message[2:], header)
@@ -23,6 +23,44 @@ func TestAudioFromBinaryMessageAllowsTrailingHeaderNewline(t *testing.T) {
 	}
 	if string(audio) != string(payload) {
 		t.Fatalf("audio payload mismatch: got %v want %v", audio, payload)
+	}
+	if !bytes.Equal(audio[:4], []byte{0xff, 0xf3, 0x64, 0xc4}) {
+		t.Fatalf("audio frame header mismatch: got % x", audio[:4])
+	}
+}
+
+func TestAudioFromBinaryMessageTrimsPayloadSeparator(t *testing.T) {
+	header := []byte("Path:audio\r\nContent-Type:audio/mpeg")
+	payload := []byte{0xff, 0xfb, 0x90, 0x64}
+	message := make([]byte, 2+len(header)+len("\r\n\r\n")+len(payload))
+	binary.BigEndian.PutUint16(message[:2], uint16(len(header)))
+	copy(message[2:], header)
+	copy(message[2+len(header):], []byte("\r\n\r\n"))
+	copy(message[2+len(header)+len("\r\n\r\n"):], payload)
+
+	audio, err := audioFromBinaryMessage(message)
+	if err != nil {
+		t.Fatalf("audioFromBinaryMessage returned error: %v", err)
+	}
+	if !bytes.Equal(audio, payload) {
+		t.Fatalf("audio payload mismatch: got %v want %v", audio, payload)
+	}
+}
+
+func TestAudioFromBinaryMessageMatchesLiveEdgeFrameLayout(t *testing.T) {
+	header := []byte("X-RequestId:ae5276e8b44ac4af4dc4ee66e3976552\r\nContent-Type:audio/mpeg\r\nX-StreamId:37D30ADF08E04D02BEC182B8F0D0E04D\r\nPath:audio\r\n")
+	payload := []byte{0xff, 0xf3, 0x64, 0xc4, 0x00, 0x1b, 0xb3, 0x69}
+	message := make([]byte, 2+len(header)+len(payload))
+	binary.BigEndian.PutUint16(message[:2], uint16(len(header)))
+	copy(message[2:], header)
+	copy(message[2+len(header):], payload)
+
+	audio, err := audioFromBinaryMessage(message)
+	if err != nil {
+		t.Fatalf("audioFromBinaryMessage returned error: %v", err)
+	}
+	if !bytes.Equal(audio, payload) {
+		t.Fatalf("audio payload mismatch: got % x want % x", audio, payload)
 	}
 }
 
