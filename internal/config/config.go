@@ -3,6 +3,7 @@ package config
 import (
 	"flag"
 	"fmt"
+	"io"
 	"strings"
 	"time"
 )
@@ -23,6 +24,9 @@ type Config struct {
 
 func Parse(args []string) (Config, error) {
 	fs := flag.NewFlagSet("edge-tts-compatible", flag.ContinueOnError)
+	fs.Usage = func() {
+		WriteUsage(fs.Output(), fs.Name())
+	}
 
 	var apiTokenCSV string
 	var readHeaderTimeoutSeconds float64
@@ -69,6 +73,44 @@ func Parse(args []string) (Config, error) {
 	cfg.UpstreamTimeout = time.Duration(upstreamTimeoutSeconds * float64(time.Second))
 	cfg.UpstreamInterval = time.Duration(upstreamIntervalMillis * float64(time.Millisecond))
 	return cfg, nil
+}
+
+func WriteUsage(w io.Writer, program string) {
+	fmt.Fprintf(w, `Usage:
+  %[1]s [flags]
+
+Example:
+  %[1]s --listen :8080 --api-token sk-local --default-voice en-US-EmmaMultilingualNeural
+
+Flags:
+  --api-token string
+      comma-separated local bearer token list
+  --default-voice string
+      default Edge TTS voice (default en-US-EmmaMultilingualNeural)
+  --idle-timeout float
+      local HTTP idle timeout in seconds (default 120)
+  --listen string
+      HTTP listen address (default :8080)
+  --proxy string
+      optional HTTP proxy URL for Edge TTS upstream requests
+  --read-header-timeout float
+      local HTTP read header timeout in seconds (default 10)
+  --upstream-concurrency int
+      maximum concurrent Edge TTS upstream requests (default 10)
+  --upstream-interval-ms float
+      minimum interval in milliseconds between any two Edge TTS upstream requests (default 500)
+  --upstream-timeout float
+      Edge TTS upstream timeout in seconds (default 120)
+
+Container deployment:
+  docker-entrypoint.sh maps environment variables to the same flags. See docker.env.example.
+
+Compatible APIs:
+  OpenAI Audio Speech: POST /v1/audio/speech, POST /audio/speech
+  Models:              GET /v1/models
+  Voices:              GET/POST /v1/voices, /voices, /v1/audio/voices, /audio/voices
+  Common endpoints:    /health
+`, program)
 }
 
 func splitCSV(value string) []string {

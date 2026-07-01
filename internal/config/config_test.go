@@ -1,6 +1,7 @@
 package config
 
 import (
+	"bytes"
 	"reflect"
 	"strings"
 	"testing"
@@ -108,5 +109,34 @@ func TestParseRejectsInvalidValues(t *testing.T) {
 				t.Fatalf("error mismatch: got %q want containing %q", err.Error(), tt.wantErr)
 			}
 		})
+	}
+}
+
+func TestWriteUsage(t *testing.T) {
+	var buf bytes.Buffer
+	WriteUsage(&buf, "edge-tts-compatible")
+	got := buf.String()
+
+	for _, want := range []string{
+		"Usage:\n  edge-tts-compatible [flags]",
+		"Example:\n  edge-tts-compatible --listen :8080 --api-token sk-local --default-voice en-US-EmmaMultilingualNeural",
+		"--api-token string",
+		"--default-voice string",
+		"--idle-timeout float",
+		"--listen string",
+		"--proxy string",
+		"--read-header-timeout float",
+		"--upstream-concurrency int",
+		"--upstream-interval-ms float",
+		"--upstream-timeout float",
+		"docker-entrypoint.sh maps environment variables to the same flags. See docker.env.example.",
+		"OpenAI Audio Speech: POST /v1/audio/speech, POST /audio/speech",
+		"Models:              GET /v1/models",
+		"Voices:              GET/POST /v1/voices, /voices, /v1/audio/voices, /audio/voices",
+		"Common endpoints:    /health",
+	} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("usage missing %q:\n%s", want, got)
+		}
 	}
 }
