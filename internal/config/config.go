@@ -4,11 +4,25 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"os"
+	"strconv"
 	"strings"
 	"time"
 )
 
 const DefaultModel = "edge"
+
+var envVarNames = []string{
+	"LISTEN",
+	"API_TOKEN",
+	"DEFAULT_VOICE",
+	"PROXY",
+	"UPSTREAM_TIMEOUT",
+	"UPSTREAM_CONCURRENCY",
+	"UPSTREAM_INTERVAL_MS",
+	"READ_HEADER_TIMEOUT",
+	"IDLE_TIMEOUT",
+}
 
 type Config struct {
 	Listen              string
@@ -47,6 +61,49 @@ func Parse(args []string) (Config, error) {
 
 	if err := fs.Parse(args); err != nil {
 		return Config{}, err
+	}
+
+	setFlags := make(map[string]bool)
+	fs.Visit(func(f *flag.Flag) {
+		setFlags[f.Name] = true
+	})
+
+	if !setFlags["listen"] {
+		applyStringEnv("LISTEN", &cfg.Listen)
+	}
+	if !setFlags["api-token"] {
+		applyStringEnv("API_TOKEN", &apiTokenCSV)
+	}
+	if !setFlags["default-voice"] {
+		applyStringEnv("DEFAULT_VOICE", &cfg.DefaultVoice)
+	}
+	if !setFlags["proxy"] {
+		applyStringEnv("PROXY", &cfg.ProxyURL)
+	}
+	if !setFlags["upstream-timeout"] {
+		if err := applyFloatEnv("UPSTREAM_TIMEOUT", &upstreamTimeoutSeconds); err != nil {
+			return Config{}, err
+		}
+	}
+	if !setFlags["upstream-concurrency"] {
+		if err := applyIntEnv("UPSTREAM_CONCURRENCY", &cfg.UpstreamConcurrency); err != nil {
+			return Config{}, err
+		}
+	}
+	if !setFlags["upstream-interval-ms"] {
+		if err := applyFloatEnv("UPSTREAM_INTERVAL_MS", &upstreamIntervalMillis); err != nil {
+			return Config{}, err
+		}
+	}
+	if !setFlags["read-header-timeout"] {
+		if err := applyFloatEnv("READ_HEADER_TIMEOUT", &readHeaderTimeoutSeconds); err != nil {
+			return Config{}, err
+		}
+	}
+	if !setFlags["idle-timeout"] {
+		if err := applyFloatEnv("IDLE_TIMEOUT", &idleTimeoutSeconds); err != nil {
+			return Config{}, err
+		}
 	}
 
 	cfg.APITokens = splitCSV(apiTokenCSV)
@@ -102,8 +159,8 @@ Flags:
   --upstream-timeout float
       Edge TTS upstream timeout in seconds (default 120)
 
-Container deployment:
-  docker-entrypoint.sh maps environment variables to the same flags. See docker.env.example.
+Environment variables:
+  Each flag can also be set with its equivalent environment variable. Command-line flags take priority. See docker.env.example.
 
 Compatible APIs:
   OpenAI Audio Speech: POST /v1/audio/speech, POST /audio/speech
@@ -111,6 +168,38 @@ Compatible APIs:
   Voices:              GET/POST /v1/voices, /voices, /v1/audio/voices, /audio/voices
   Common endpoints:    /health
 `, program)
+}
+
+func applyStringEnv(name string, target *string) {
+	if value, ok := os.LookupEnv(name); ok {
+		*target = value
+	}
+}
+
+func applyFloatEnv(name string, target *float64) error {
+	value, ok := os.LookupEnv(name)
+	if !ok {
+		return nil
+	}
+	parsed, err := strconv.ParseFloat(value, 64)
+	if err != nil {
+		return fmt.Errorf("%s must be a number: %w", name, err)
+	}
+	*target = parsed
+	return nil
+}
+
+func applyIntEnv(name string, target *int) error {
+	value, ok := os.LookupEnv(name)
+	if !ok {
+		return nil
+	}
+	parsed, err := strconv.Atoi(value)
+	if err != nil {
+		return fmt.Errorf("%s must be an integer: %w", name, err)
+	}
+	*target = parsed
+	return nil
 }
 
 func splitCSV(value string) []string {

@@ -4,7 +4,7 @@ This is an OpenAI-compatible Text-to-Speech service backed directly by Microsoft
 
 The public model name is always `edge`. The server accepts the client-provided `model` field for compatibility, but ignores its value when calling the Edge TTS upstream.
 
-It is configured with command-line flags for local runs and environment variables for container deployment.
+It can be configured with command-line flags or environment variables. When both are set for the same option, the command-line flag takes priority.
 
 ## Configuration and Usage
 
@@ -43,7 +43,7 @@ curl http://localhost:8080/v1/audio/speech \
   -d '{"model":"edge","input":"Hello world.","voice":"en-US-EmmaMultilingualNeural","stream_format":"sse"}'
 ```
 
-For container deployment, use `docker.env.example`:
+For environment-variable based deployment, use `docker.env.example`:
 
 ```bash
 cp docker.env.example docker.env
@@ -56,7 +56,7 @@ docker run -itd \
   edge-tts-compatible:latest
 ```
 
-Container environment reference:
+Environment reference:
 
 | Environment variable | Equivalent flag |
 | --- | --- |
