@@ -466,3 +466,10 @@ Default upstream throttling is `10` concurrent Edge TTS requests and `500ms` bet
 | cy-GB-NiaNeural | Female | cy-GB | Microsoft Nia Online (Natural) - Welsh (United Kingdom) |
 | zu-ZA-ThandoNeural | Female | zu-ZA | Microsoft Thando Online (Natural) - Zulu (South Africa) |
 | zu-ZA-ThembaNeural | Male | zu-ZA | Microsoft Themba Online (Natural) - Zulu (South Africa) |
+
+## License
+
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for
+details. Third-party dependency notices and complete license texts are
+available in [THIRD_PARTY_NOTICES.txt](THIRD_PARTY_NOTICES.txt) and
+[`THIRD_PARTY_LICENSES/`](THIRD_PARTY_LICENSES/).

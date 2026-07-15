@@ -1,0 +1,15 @@
+# Third-Party Notices
+
+The release binary statically links the following Go module. Release packages
+include its complete license text in `THIRD_PARTY_LICENSES/`.
+
+## gorilla/websocket
+
+- Version: v1.5.3
+- Source: https://github.com/gorilla/websocket
+- License: MIT
+- Full license text: `THIRD_PARTY_LICENSES/gorilla-websocket-MIT.txt`
+
+## Project License
+
+- MIT

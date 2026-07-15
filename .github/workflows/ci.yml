@@ -41,6 +41,14 @@ jobs:
       - name: Run tests
         run: go test ./...
 
+      - name: Check third-party notices
+        run: |
+          test -s LICENSE
+          test -s NOTICE
+          test -s THIRD_PARTY_NOTICES.txt
+          grep -qi 'gorilla/websocket' THIRD_PARTY_NOTICES.txt
+          test -s THIRD_PARTY_LICENSES/gorilla-websocket-MIT.txt
+
   build-binaries:
     name: Binary ${{ matrix.goos }}/${{ matrix.goarch }}
     runs-on: ubuntu-latest
@@ -94,7 +102,8 @@ jobs:
           package="${BINARY_NAME}_${GOOS}_${GOARCH}"
           mkdir -p "dist/${package}"
           go build -trimpath -ldflags="-s -w" -o "dist/${package}/${BINARY_NAME}${{ matrix.ext }}" ./cmd/server
-          cp README.md args.example docker.env.example docker-entrypoint.sh "dist/${package}/"
+          cp README.md LICENSE NOTICE THIRD_PARTY_NOTICES.txt args.example docker.env.example docker-entrypoint.sh "dist/${package}/"
+          cp -R THIRD_PARTY_LICENSES "dist/${package}/"
 
       - name: Package archive
         working-directory: dist
