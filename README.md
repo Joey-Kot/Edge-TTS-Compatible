@@ -8,7 +8,7 @@ It can be configured with command-line flags or environment variables. When both
 
 ## Configuration and Usage
 
-For local binary runs:
+For local binary runs, build with Go 1.27.3 or later:
 
 ```bash
 go build -trimpath -ldflags="-s -w" -o edge-tts-compatible ./cmd/server
